@@ -39,8 +39,11 @@ export default function Dashboard() {
   const [error, setError] = useState("");
   const [analyzing, setAnalyzing] = useState(false);
   const [stockPage, setStockPage] = useState(0);
+  const [topPage, setTopPage] = useState(0);
+  const [sinVentasPage, setSinVentasPage] = useState(0);
   const [cachedAt, setCachedAt] = useState<string | null>(null);
   const STOCK_PAGE_SIZE = 10;
+  const PAGE_SIZE = 20;
   const [topOrden, setTopOrden] = useState<"ventas" | "facturacion">("ventas");
   const [alerts, setAlerts] = useState<{ tipo: string; titulo: string; descripcion: string; accion: string }[]>([]);
   const [resumen, setResumen] = useState("");
@@ -226,32 +229,47 @@ export default function Dashboard() {
                 </button>
               </div>
             </div>
-            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
-              <thead>
-                <tr style={{ background: "#f8f8f8" }}>
-                  <th style={{ padding: "8px 10px", textAlign: "left", borderBottom: "1px solid #eee" }}>#</th>
-                  <th style={{ padding: "8px 10px", textAlign: "left", borderBottom: "1px solid #eee" }}>Producto</th>
-                  <th style={{ padding: "8px 10px", textAlign: "right", borderBottom: "1px solid #eee" }}>Vendidos período</th>
-                  <th style={{ padding: "8px 10px", textAlign: "right", borderBottom: "1px solid #eee" }}>Stock</th>
-                  <th style={{ padding: "8px 10px", textAlign: "right", borderBottom: "1px solid #eee" }}>Precio</th>
-                  <th style={{ padding: "8px 10px", textAlign: "right", borderBottom: "1px solid #eee" }}>Facturación período</th>
-                </tr>
-              </thead>
-              <tbody>
-                {[...kpis.top_productos]
-                  .sort((a, b) => topOrden === "facturacion" ? b.facturacion_periodo - a.facturacion_periodo : b.ventas_periodo - a.ventas_periodo)
-                  .map((p, i) => (
-                  <tr key={i} style={{ borderBottom: "1px solid #f5f5f5" }}>
-                    <td style={{ padding: "8px 10px", color: "#888" }}>{i + 1}</td>
-                    <td style={{ padding: "8px 10px" }}>{p.title}</td>
-                    <td style={{ padding: "8px 10px", textAlign: "right", fontWeight: 600 }}>{fmt(p.ventas_periodo)}</td>
-                    <td style={{ padding: "8px 10px", textAlign: "right" }}>{fmt(p.stock)}</td>
-                    <td style={{ padding: "8px 10px", textAlign: "right" }}>{fmtMoney(p.precio)}</td>
-                    <td style={{ padding: "8px 10px", textAlign: "right" }}>{fmtMoney(p.facturacion_periodo)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            {(() => {
+              const sorted = [...kpis.top_productos].sort((a, b) =>
+                topOrden === "facturacion" ? b.facturacion_periodo - a.facturacion_periodo : b.ventas_periodo - a.ventas_periodo);
+              const totalPages = Math.ceil(sorted.length / PAGE_SIZE);
+              const page = sorted.slice(topPage * PAGE_SIZE, (topPage + 1) * PAGE_SIZE);
+              return <>
+                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+                  <thead>
+                    <tr style={{ background: "#f8f8f8" }}>
+                      <th style={{ padding: "8px 10px", textAlign: "left", borderBottom: "1px solid #eee" }}>#</th>
+                      <th style={{ padding: "8px 10px", textAlign: "left", borderBottom: "1px solid #eee" }}>Producto</th>
+                      <th style={{ padding: "8px 10px", textAlign: "right", borderBottom: "1px solid #eee" }}>Vendidos período</th>
+                      <th style={{ padding: "8px 10px", textAlign: "right", borderBottom: "1px solid #eee" }}>Stock</th>
+                      <th style={{ padding: "8px 10px", textAlign: "right", borderBottom: "1px solid #eee" }}>Precio</th>
+                      <th style={{ padding: "8px 10px", textAlign: "right", borderBottom: "1px solid #eee" }}>Facturación período</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {page.map((p, i) => (
+                      <tr key={i} style={{ borderBottom: "1px solid #f5f5f5" }}>
+                        <td style={{ padding: "8px 10px", color: "#888" }}>{topPage * PAGE_SIZE + i + 1}</td>
+                        <td style={{ padding: "8px 10px" }}>{p.title}</td>
+                        <td style={{ padding: "8px 10px", textAlign: "right", fontWeight: 600 }}>{fmt(p.ventas_periodo)}</td>
+                        <td style={{ padding: "8px 10px", textAlign: "right" }}>{fmt(p.stock)}</td>
+                        <td style={{ padding: "8px 10px", textAlign: "right" }}>{fmtMoney(p.precio)}</td>
+                        <td style={{ padding: "8px 10px", textAlign: "right" }}>{fmtMoney(p.facturacion_periodo)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                {totalPages > 1 && (
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 10, fontSize: 13 }}>
+                    <button onClick={() => setTopPage(p => p - 1)} disabled={topPage === 0}
+                      style={{ padding: "4px 12px", border: "1px solid #ddd", borderRadius: 6, cursor: topPage === 0 ? "default" : "pointer", background: topPage === 0 ? "#f5f5f5" : "white" }}>←</button>
+                    <span style={{ color: "#888" }}>{topPage + 1} / {totalPages}</span>
+                    <button onClick={() => setTopPage(p => p + 1)} disabled={topPage + 1 >= totalPages}
+                      style={{ padding: "4px 12px", border: "1px solid #ddd", borderRadius: 6, cursor: topPage + 1 >= totalPages ? "default" : "pointer", background: topPage + 1 >= totalPages ? "#f5f5f5" : "white" }}>→</button>
+                  </div>
+                )}
+              </>;
+            })()}
           </div>
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 24 }}>
@@ -292,14 +310,24 @@ export default function Dashboard() {
               <div style={{ fontSize: 12, color: "#888", marginBottom: 10 }}>Activas con stock que no vendieron entre {fmtDate(kpis.date_from)} y {fmtDate(kpis.date_to)}</div>
               {kpis.sin_ventas.length === 0
                 ? <div style={{ color: "#888", fontSize: 13 }}>Ninguna</div>
-                : kpis.sin_ventas.slice(0, 10).map((p) => (
-                  <div key={p.id} style={{ fontSize: 13, padding: "6px 0", borderBottom: "1px solid #f0f0f0", display: "flex", justifyContent: "space-between" }}>
-                    <span><strong>{p.n}.</strong> {p.title}</span>
-                    <span style={{ color: "#888", whiteSpace: "nowrap", marginLeft: 8 }}>{p.stock} u.</span>
-                  </div>
-                ))
+                : <>
+                  {kpis.sin_ventas.slice(sinVentasPage * PAGE_SIZE, (sinVentasPage + 1) * PAGE_SIZE).map((p) => (
+                    <div key={p.id} style={{ fontSize: 13, padding: "6px 0", borderBottom: "1px solid #f0f0f0", display: "flex", justifyContent: "space-between" }}>
+                      <span><strong>{p.n}.</strong> {p.title}</span>
+                      <span style={{ color: "#888", whiteSpace: "nowrap", marginLeft: 8 }}>{p.stock} u.</span>
+                    </div>
+                  ))}
+                  {kpis.sin_ventas.length > PAGE_SIZE && (
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 10, fontSize: 13 }}>
+                      <button onClick={() => setSinVentasPage(p => p - 1)} disabled={sinVentasPage === 0}
+                        style={{ padding: "4px 12px", border: "1px solid #ddd", borderRadius: 6, cursor: sinVentasPage === 0 ? "default" : "pointer", background: sinVentasPage === 0 ? "#f5f5f5" : "white" }}>←</button>
+                      <span style={{ color: "#888" }}>{sinVentasPage + 1} / {Math.ceil(kpis.sin_ventas.length / PAGE_SIZE)}</span>
+                      <button onClick={() => setSinVentasPage(p => p + 1)} disabled={(sinVentasPage + 1) * PAGE_SIZE >= kpis.sin_ventas.length}
+                        style={{ padding: "4px 12px", border: "1px solid #ddd", borderRadius: 6, cursor: (sinVentasPage + 1) * PAGE_SIZE >= kpis.sin_ventas.length ? "default" : "pointer", background: (sinVentasPage + 1) * PAGE_SIZE >= kpis.sin_ventas.length ? "#f5f5f5" : "white" }}>→</button>
+                    </div>
+                  )}
+                </>
               }
-              {kpis.sin_ventas.length > 10 && <div style={{ fontSize: 12, color: "#888", marginTop: 8 }}>+ {kpis.sin_ventas.length - 10} más</div>}
             </div>
           </div>
 
