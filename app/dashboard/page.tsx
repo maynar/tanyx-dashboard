@@ -214,7 +214,7 @@ export default function Dashboard() {
 
           <div style={{ background: "white", border: "1px solid #eee", borderRadius: 10, padding: 16, marginBottom: 24 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-              <div style={{ fontWeight: 600 }}>Top 20 productos del período</div>
+              <div style={{ fontWeight: 600 }}>Top 30 productos del período</div>
               <div style={{ display: "flex", gap: 6 }}>
                 <button onClick={() => setTopOrden("ventas")}
                   style={{ padding: "4px 12px", fontSize: 12, border: "1px solid #ddd", borderRadius: 6, cursor: "pointer", background: topOrden === "ventas" ? "#3483FA" : "white", color: topOrden === "ventas" ? "white" : "#333" }}>
