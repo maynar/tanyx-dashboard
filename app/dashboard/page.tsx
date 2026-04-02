@@ -12,7 +12,7 @@ interface KPIs {
   date_to: string;
   stock_critico: { n: number; title: string; available_quantity: number; id: string }[];
   sin_ventas: { n: number; title: string; id: string; stock: number }[];
-  top_productos: { listing_id?: string; title: string; ventas_periodo: number; facturacion_periodo: number; stock: number; precio: number; ventas_historicas: number; sku?: string }[];
+  top_productos: { listing_id?: string; title: string; tipo_publicacion?: string; ventas_periodo: number; facturacion_periodo: number; stock: number; precio: number; ventas_historicas: number; sku?: string }[];
 }
 
 const RAILWAY_URL = "https://tanyx-api-production.up.railway.app";
@@ -251,7 +251,16 @@ export default function Dashboard() {
                       <tr key={i} style={{ borderBottom: "1px solid #f5f5f5" }}>
                         <td style={{ padding: "8px 10px", color: "#888" }}>{topPage * PAGE_SIZE + i + 1}</td>
                         <td style={{ padding: "8px 10px" }}>
-                          <div>{p.title}</div>
+                          <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                            <span>{p.title}</span>
+                            {p.tipo_publicacion && (
+                              <span style={{
+                                fontSize: 10, padding: "1px 6px", borderRadius: 4, whiteSpace: "nowrap",
+                                background: p.tipo_publicacion.includes("cuotas") ? "#e8f4fd" : p.tipo_publicacion === "Premium" ? "#fff3cd" : "#f0f0f0",
+                                color: p.tipo_publicacion.includes("cuotas") ? "#0056b3" : p.tipo_publicacion === "Premium" ? "#856404" : "#666",
+                              }}>{p.tipo_publicacion}</span>
+                            )}
+                          </div>
                           {p.listing_id && <div style={{ fontSize: 11, color: "#aaa", marginTop: 2 }}>{p.listing_id}{p.sku ? ` · SKU: ${p.sku}` : ""}</div>}
                         </td>
                         <td style={{ padding: "8px 10px", textAlign: "right", fontWeight: 600 }}>{fmt(p.ventas_periodo)}</td>
