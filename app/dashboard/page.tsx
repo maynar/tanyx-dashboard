@@ -12,7 +12,7 @@ interface KPIs {
   date_to: string;
   stock_critico: { n: number; title: string; available_quantity: number; id: string }[];
   sin_ventas: { n: number; title: string; id: string; stock: number }[];
-  top_productos: { listing_id?: string; title: string; tipo_publicacion?: string; ventas_periodo: number; facturacion_periodo: number; stock: number; precio: number; ventas_historicas: number; sku?: string }[];
+  top_productos: { title: string; sku?: string; ventas_normal: number; ventas_premium: number; ventas_premium_cuotas: number; ventas_periodo: number; facturacion_periodo: number; stock: number; precio: number; ventas_historicas: number }[];
 }
 
 const RAILWAY_URL = "https://tanyx-api-production.up.railway.app";
@@ -240,10 +240,13 @@ export default function Dashboard() {
                     <tr style={{ background: "#f8f8f8" }}>
                       <th style={{ padding: "8px 10px", textAlign: "left", borderBottom: "1px solid #eee" }}>#</th>
                       <th style={{ padding: "8px 10px", textAlign: "left", borderBottom: "1px solid #eee" }}>Producto</th>
-                      <th style={{ padding: "8px 10px", textAlign: "right", borderBottom: "1px solid #eee" }}>Vendidos período</th>
+                      <th style={{ padding: "8px 10px", textAlign: "right", borderBottom: "1px solid #eee", color: "#666" }}>Normal</th>
+                      <th style={{ padding: "8px 10px", textAlign: "right", borderBottom: "1px solid #eee", color: "#856404" }}>Premium</th>
+                      <th style={{ padding: "8px 10px", textAlign: "right", borderBottom: "1px solid #eee", color: "#0056b3" }}>+Cuotas</th>
+                      <th style={{ padding: "8px 10px", textAlign: "right", borderBottom: "1px solid #eee", fontWeight: 700 }}>Total</th>
                       <th style={{ padding: "8px 10px", textAlign: "right", borderBottom: "1px solid #eee" }}>Stock</th>
                       <th style={{ padding: "8px 10px", textAlign: "right", borderBottom: "1px solid #eee" }}>Precio</th>
-                      <th style={{ padding: "8px 10px", textAlign: "right", borderBottom: "1px solid #eee" }}>Facturación período</th>
+                      <th style={{ padding: "8px 10px", textAlign: "right", borderBottom: "1px solid #eee" }}>Facturación</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -251,19 +254,13 @@ export default function Dashboard() {
                       <tr key={i} style={{ borderBottom: "1px solid #f5f5f5" }}>
                         <td style={{ padding: "8px 10px", color: "#888" }}>{topPage * PAGE_SIZE + i + 1}</td>
                         <td style={{ padding: "8px 10px" }}>
-                          <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-                            <span>{p.title}</span>
-                            {p.tipo_publicacion && (
-                              <span style={{
-                                fontSize: 10, padding: "1px 6px", borderRadius: 4, whiteSpace: "nowrap",
-                                background: p.tipo_publicacion.includes("cuotas") ? "#e8f4fd" : p.tipo_publicacion === "Premium" ? "#fff3cd" : "#f0f0f0",
-                                color: p.tipo_publicacion.includes("cuotas") ? "#0056b3" : p.tipo_publicacion === "Premium" ? "#856404" : "#666",
-                              }}>{p.tipo_publicacion}</span>
-                            )}
-                          </div>
-                          {p.listing_id && <div style={{ fontSize: 11, color: "#aaa", marginTop: 2 }}>{p.listing_id}{p.sku ? ` · SKU: ${p.sku}` : ""}</div>}
+                          <div>{p.title}</div>
+                          {p.sku && <div style={{ fontSize: 11, color: "#aaa", marginTop: 1 }}>SKU: {p.sku}</div>}
                         </td>
-                        <td style={{ padding: "8px 10px", textAlign: "right", fontWeight: 600 }}>{fmt(p.ventas_periodo)}</td>
+                        <td style={{ padding: "8px 10px", textAlign: "right", color: p.ventas_normal > 0 ? "#333" : "#ccc" }}>{p.ventas_normal > 0 ? fmt(p.ventas_normal) : "—"}</td>
+                        <td style={{ padding: "8px 10px", textAlign: "right", color: p.ventas_premium > 0 ? "#856404" : "#ccc" }}>{p.ventas_premium > 0 ? fmt(p.ventas_premium) : "—"}</td>
+                        <td style={{ padding: "8px 10px", textAlign: "right", color: p.ventas_premium_cuotas > 0 ? "#0056b3" : "#ccc" }}>{p.ventas_premium_cuotas > 0 ? fmt(p.ventas_premium_cuotas) : "—"}</td>
+                        <td style={{ padding: "8px 10px", textAlign: "right", fontWeight: 700 }}>{fmt(p.ventas_periodo)}</td>
                         <td style={{ padding: "8px 10px", textAlign: "right" }}>{fmt(p.stock)}</td>
                         <td style={{ padding: "8px 10px", textAlign: "right" }}>{fmtMoney(p.precio)}</td>
                         <td style={{ padding: "8px 10px", textAlign: "right" }}>{fmtMoney(p.facturacion_periodo)}</td>
