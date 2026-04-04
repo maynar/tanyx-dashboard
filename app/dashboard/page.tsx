@@ -292,33 +292,7 @@ export default function Dashboard() {
             })()}
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 24 }}>
-            <div style={{ background: "white", border: "1px solid #eee", borderRadius: 10, padding: 16 }}>
-              <div style={{ fontWeight: 600, marginBottom: 12 }}>Stock crítico ({kpis.stock_critico.length})</div>
-              {kpis.stock_critico.length === 0
-                ? <div style={{ color: "#888", fontSize: 13 }}>Ninguno</div>
-                : <>
-                  {kpis.stock_critico.slice(stockPage * STOCK_PAGE_SIZE, (stockPage + 1) * STOCK_PAGE_SIZE).map((p) => (
-                    <div key={p.id} style={{ fontSize: 13, padding: "6px 0", borderBottom: "1px solid #f0f0f0", display: "flex", justifyContent: "space-between" }}>
-                      <span><strong>{p.n}.</strong> {p.title}</span>
-                      <span style={{ color: p.available_quantity <= 2 ? "#cc0000" : "#e67e00", fontWeight: 600, whiteSpace: "nowrap", marginLeft: 8 }}>
-                        {p.available_quantity} u.
-                      </span>
-                    </div>
-                  ))}
-                  {kpis.stock_critico.length > STOCK_PAGE_SIZE && (
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 10, fontSize: 13 }}>
-                      <button onClick={() => setStockPage(p => p - 1)} disabled={stockPage === 0}
-                        style={{ padding: "4px 12px", border: "1px solid #ddd", borderRadius: 6, cursor: stockPage === 0 ? "default" : "pointer", background: stockPage === 0 ? "#f5f5f5" : "white" }}>←</button>
-                      <span style={{ color: "#888" }}>{stockPage + 1} / {Math.ceil(kpis.stock_critico.length / STOCK_PAGE_SIZE)}</span>
-                      <button onClick={() => setStockPage(p => p + 1)} disabled={(stockPage + 1) * STOCK_PAGE_SIZE >= kpis.stock_critico.length}
-                        style={{ padding: "4px 12px", border: "1px solid #ddd", borderRadius: 6, cursor: (stockPage + 1) * STOCK_PAGE_SIZE >= kpis.stock_critico.length ? "default" : "pointer", background: (stockPage + 1) * STOCK_PAGE_SIZE >= kpis.stock_critico.length ? "#f5f5f5" : "white" }}>→</button>
-                    </div>
-                  )}
-                </>
-              }
-            </div>
-
+          <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 16, marginBottom: 24 }}>
             <div style={{ background: "white", border: "1px solid #eee", borderRadius: 10, padding: 16 }}>
               <div style={{ fontWeight: 600, marginBottom: 4 }}>Con stock sin ventas en el período ({kpis.sin_ventas.length})</div>
               <div style={{ fontSize: 12, color: "#888", marginBottom: 10 }}>Activas con stock que no vendieron entre {fmtDate(kpis.date_from)} y {fmtDate(kpis.date_to)}</div>
