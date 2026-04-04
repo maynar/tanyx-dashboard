@@ -219,7 +219,7 @@ export default function Dashboard() {
 
           <div style={{ background: "white", border: "1px solid #eee", borderRadius: 10, padding: 16, marginBottom: 24 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12, flexWrap: "wrap", gap: 8 }}>
-              <div style={{ fontWeight: 600 }}>Top 30 más vendidos del período</div>
+              <div style={{ fontWeight: 600 }}>Top 40 más vendidos del período</div>
               <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                 <button onClick={() => setTopOrden("ventas")}
                   style={{ padding: "4px 12px", fontSize: 12, border: "1px solid #ddd", borderRadius: 6, cursor: "pointer", background: topOrden === "ventas" ? "#3483FA" : "white", color: topOrden === "ventas" ? "white" : "#333" }}>
@@ -242,7 +242,7 @@ export default function Dashboard() {
             {(() => {
               const filtered = kpis.top_productos
                 .filter(p => !topSinCuotas || p.ventas_premium_cuotas === 0)
-                .filter(p => !topStockCritico || (p.stock > 0 && p.stock <= 5));
+                .filter(p => !topStockCritico || (p.stock > 0 && p.stock <= 15));
               const sorted = [...filtered].sort((a, b) =>
                 topOrden === "facturacion" ? b.facturacion_periodo - a.facturacion_periodo : b.ventas_periodo - a.ventas_periodo);
               const totalPages = Math.ceil(sorted.length / PAGE_SIZE);
