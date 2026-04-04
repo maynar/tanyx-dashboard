@@ -240,8 +240,8 @@ export default function Dashboard() {
                     <tr style={{ background: "#f8f8f8" }}>
                       <th style={{ padding: "8px 10px", textAlign: "left", borderBottom: "1px solid #eee" }}>#</th>
                       <th style={{ padding: "8px 10px", textAlign: "left", borderBottom: "1px solid #eee" }}>Producto</th>
-                      <th style={{ padding: "8px 10px", textAlign: "right", borderBottom: "1px solid #eee", color: "#856404" }}>Premium</th>
-                      <th style={{ padding: "8px 10px", textAlign: "right", borderBottom: "1px solid #eee", color: "#0056b3" }}>+Cuotas</th>
+                      <th style={{ padding: "8px 10px", textAlign: "right", borderBottom: "1px solid #eee", color: "#555" }}>Premium</th>
+                      <th style={{ padding: "8px 10px", textAlign: "right", borderBottom: "1px solid #eee", color: "#0056b3" }}>Cuotas</th>
                       <th style={{ padding: "8px 10px", textAlign: "right", borderBottom: "1px solid #eee", fontWeight: 700 }}>Total</th>
                       <th style={{ padding: "8px 10px", textAlign: "right", borderBottom: "1px solid #eee" }}>Stock</th>
                       <th style={{ padding: "8px 10px", textAlign: "right", borderBottom: "1px solid #eee" }}>Precio</th>
