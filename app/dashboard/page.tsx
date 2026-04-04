@@ -316,6 +316,7 @@ export default function Dashboard() {
                     </div>
                   )}
                 </>
+              }
             </div>
 
             <div style={{ background: "white", border: "1px solid #eee", borderRadius: 10, padding: 16 }}>
