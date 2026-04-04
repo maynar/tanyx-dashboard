@@ -218,23 +218,26 @@ export default function Dashboard() {
           </div>
 
           <div style={{ background: "white", border: "1px solid #eee", borderRadius: 10, padding: 16, marginBottom: 24 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12, flexWrap: "wrap", gap: 8 }}>
-              <div style={{ fontWeight: 600 }}>Top 40 más vendidos del período</div>
-              <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+            <div style={{ marginBottom: 14 }}>
+              <div style={{ fontWeight: 600, marginBottom: 10 }}>Top 40 más vendidos del período</div>
+              <div style={{ background: "#f4f6fa", border: "1px solid #e2e6f0", borderRadius: 8, padding: "10px 12px", display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+                <span style={{ fontSize: 11, color: "#888", marginRight: 4, whiteSpace: "nowrap" }}>Ordenar:</span>
                 <button onClick={() => setTopOrden("ventas")}
-                  style={{ padding: "4px 12px", fontSize: 12, border: "1px solid #ddd", borderRadius: 6, cursor: "pointer", background: topOrden === "ventas" ? "#3483FA" : "white", color: topOrden === "ventas" ? "white" : "#333" }}>
+                  style={{ padding: "5px 14px", fontSize: 12, border: "1px solid #ddd", borderRadius: 6, cursor: "pointer", background: topOrden === "ventas" ? "#3483FA" : "white", color: topOrden === "ventas" ? "white" : "#333", fontWeight: topOrden === "ventas" ? 600 : 400 }}>
                   Por ventas
                 </button>
                 <button onClick={() => setTopOrden("facturacion")}
-                  style={{ padding: "4px 12px", fontSize: 12, border: "1px solid #ddd", borderRadius: 6, cursor: "pointer", background: topOrden === "facturacion" ? "#3483FA" : "white", color: topOrden === "facturacion" ? "white" : "#333" }}>
+                  style={{ padding: "5px 14px", fontSize: 12, border: "1px solid #ddd", borderRadius: 6, cursor: "pointer", background: topOrden === "facturacion" ? "#3483FA" : "white", color: topOrden === "facturacion" ? "white" : "#333", fontWeight: topOrden === "facturacion" ? 600 : 400 }}>
                   Por facturación
                 </button>
+                <div style={{ width: 1, background: "#d0d7e6", alignSelf: "stretch", margin: "0 4px" }} />
+                <span style={{ fontSize: 11, color: "#888", marginRight: 4, whiteSpace: "nowrap" }}>Filtrar:</span>
                 <button onClick={() => { setTopSinCuotas(v => !v); setTopPage(0); }}
-                  style={{ padding: "4px 12px", fontSize: 12, border: "1px solid #ddd", borderRadius: 6, cursor: "pointer", background: topSinCuotas ? "#e67e00" : "white", color: topSinCuotas ? "white" : "#333" }}>
+                  style={{ padding: "5px 14px", fontSize: 12, border: `1px solid ${topSinCuotas ? "#e67e00" : "#ddd"}`, borderRadius: 6, cursor: "pointer", background: topSinCuotas ? "#e67e00" : "white", color: topSinCuotas ? "white" : "#333", fontWeight: topSinCuotas ? 600 : 400 }}>
                   Sin publicación cuotas
                 </button>
                 <button onClick={() => { setTopStockCritico(v => !v); setTopPage(0); }}
-                  style={{ padding: "4px 12px", fontSize: 12, border: "1px solid #ddd", borderRadius: 6, cursor: "pointer", background: topStockCritico ? "#cc0000" : "white", color: topStockCritico ? "white" : "#333" }}>
+                  style={{ padding: "5px 14px", fontSize: 12, border: `1px solid ${topStockCritico ? "#cc0000" : "#ddd"}`, borderRadius: 6, cursor: "pointer", background: topStockCritico ? "#cc0000" : "white", color: topStockCritico ? "white" : "#333", fontWeight: topStockCritico ? 600 : 400 }}>
                   Stock crítico
                 </button>
               </div>
