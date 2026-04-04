@@ -12,7 +12,7 @@ interface KPIs {
   date_to: string;
   stock_critico: { n: number; title: string; available_quantity: number; id: string }[];
   sin_ventas: { n: number; title: string; id: string; stock: number }[];
-  top_productos: { title: string; sku?: string; ventas_normal: number; ventas_premium: number; ventas_premium_cuotas: number; ventas_periodo: number; facturacion_periodo: number; stock: number; precio: number; ventas_historicas: number }[];
+  top_productos: { title: string; sku?: string; en_full: boolean; ventas_normal: number; ventas_premium: number; ventas_premium_cuotas: number; ventas_periodo: number; facturacion_periodo: number; stock: number; precio: number; ventas_historicas: number }[];
 }
 
 const RAILWAY_URL = "https://tanyx-api-production.up.railway.app";
@@ -47,6 +47,7 @@ export default function Dashboard() {
   const [topOrden, setTopOrden] = useState<"ventas" | "facturacion">("ventas");
   const [topSinCuotas, setTopSinCuotas] = useState(false);
   const [topStockCritico, setTopStockCritico] = useState(false);
+  const [topSinFull, setTopSinFull] = useState(false);
   const [alerts, setAlerts] = useState<{ tipo: string; titulo: string; descripcion: string; accion: string }[]>([]);
   const [resumen, setResumen] = useState("");
 
@@ -240,12 +241,17 @@ export default function Dashboard() {
                   style={{ padding: "5px 14px", fontSize: 12, border: `1px solid ${topStockCritico ? "#cc0000" : "#ddd"}`, borderRadius: 6, cursor: "pointer", background: topStockCritico ? "#cc0000" : "white", color: topStockCritico ? "white" : "#333", fontWeight: topStockCritico ? 600 : 400 }}>
                   Stock crítico
                 </button>
+                <button onClick={() => { setTopSinFull(v => !v); setTopPage(0); }}
+                  style={{ padding: "5px 14px", fontSize: 12, border: `1px solid ${topSinFull ? "#6f42c1" : "#ddd"}`, borderRadius: 6, cursor: "pointer", background: topSinFull ? "#6f42c1" : "white", color: topSinFull ? "white" : "#333", fontWeight: topSinFull ? 600 : 400 }}>
+                  Sin Full
+                </button>
               </div>
             </div>
             {(() => {
               const filtered = kpis.top_productos
                 .filter(p => !topSinCuotas || p.ventas_premium_cuotas === 0)
-                .filter(p => !topStockCritico || (p.stock > 0 && p.stock <= 15));
+                .filter(p => !topStockCritico || (p.stock > 0 && p.stock <= 15))
+                .filter(p => !topSinFull || !p.en_full);
               const sorted = [...filtered].sort((a, b) =>
                 topOrden === "facturacion" ? b.facturacion_periodo - a.facturacion_periodo : b.ventas_periodo - a.ventas_periodo);
               const totalPages = Math.ceil(sorted.length / PAGE_SIZE);
@@ -269,7 +275,10 @@ export default function Dashboard() {
                       <tr key={i} style={{ borderBottom: "1px solid #f5f5f5" }}>
                         <td style={{ padding: "8px 10px", color: "#888" }}>{topPage * PAGE_SIZE + i + 1}</td>
                         <td style={{ padding: "8px 10px" }}>
-                          <div>{p.title}</div>
+                          <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                            <span>{p.title}</span>
+                            {p.en_full && <span style={{ fontSize: 10, padding: "1px 6px", borderRadius: 4, background: "#00a650", color: "white", fontWeight: 600, whiteSpace: "nowrap" }}>Full</span>}
+                          </div>
                           {p.sku && <div style={{ fontSize: 11, color: "#aaa", marginTop: 1 }}>SKU: {p.sku}</div>}
                         </td>
                         <td style={{ padding: "8px 10px", textAlign: "right", color: p.ventas_premium > 0 ? "#856404" : "#ccc" }}>{p.ventas_premium > 0 ? fmt(p.ventas_premium) : "—"}</td>
