@@ -45,6 +45,7 @@ export default function Dashboard() {
   const STOCK_PAGE_SIZE = 10;
   const PAGE_SIZE = 20;
   const [topOrden, setTopOrden] = useState<"ventas" | "facturacion">("ventas");
+  const [topSinCuotas, setTopSinCuotas] = useState(false);
   const [alerts, setAlerts] = useState<{ tipo: string; titulo: string; descripcion: string; accion: string }[]>([]);
   const [resumen, setResumen] = useState("");
 
@@ -216,9 +217,9 @@ export default function Dashboard() {
           </div>
 
           <div style={{ background: "white", border: "1px solid #eee", borderRadius: 10, padding: 16, marginBottom: 24 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-              <div style={{ fontWeight: 600 }}>Top 30 productos del período</div>
-              <div style={{ display: "flex", gap: 6 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12, flexWrap: "wrap", gap: 8 }}>
+              <div style={{ fontWeight: 600 }}>Top 30 más vendidos del período</div>
+              <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                 <button onClick={() => setTopOrden("ventas")}
                   style={{ padding: "4px 12px", fontSize: 12, border: "1px solid #ddd", borderRadius: 6, cursor: "pointer", background: topOrden === "ventas" ? "#3483FA" : "white", color: topOrden === "ventas" ? "white" : "#333" }}>
                   Por ventas
@@ -227,10 +228,17 @@ export default function Dashboard() {
                   style={{ padding: "4px 12px", fontSize: 12, border: "1px solid #ddd", borderRadius: 6, cursor: "pointer", background: topOrden === "facturacion" ? "#3483FA" : "white", color: topOrden === "facturacion" ? "white" : "#333" }}>
                   Por facturación
                 </button>
+                <button onClick={() => { setTopSinCuotas(v => !v); setTopPage(0); }}
+                  style={{ padding: "4px 12px", fontSize: 12, border: "1px solid #ddd", borderRadius: 6, cursor: "pointer", background: topSinCuotas ? "#e67e00" : "white", color: topSinCuotas ? "white" : "#333" }}>
+                  Sin publicación cuotas
+                </button>
               </div>
             </div>
             {(() => {
-              const sorted = [...kpis.top_productos].sort((a, b) =>
+              const filtered = topSinCuotas
+                ? kpis.top_productos.filter(p => p.ventas_premium_cuotas === 0)
+                : kpis.top_productos;
+              const sorted = [...filtered].sort((a, b) =>
                 topOrden === "facturacion" ? b.facturacion_periodo - a.facturacion_periodo : b.ventas_periodo - a.ventas_periodo);
               const totalPages = Math.ceil(sorted.length / PAGE_SIZE);
               const page = sorted.slice(topPage * PAGE_SIZE, (topPage + 1) * PAGE_SIZE);
