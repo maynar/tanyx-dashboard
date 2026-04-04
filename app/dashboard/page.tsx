@@ -46,7 +46,7 @@ export default function Dashboard() {
   const PAGE_SIZE = 20;
   const [topOrden, setTopOrden] = useState<"ventas" | "facturacion">("ventas");
   const [topSinCuotas, setTopSinCuotas] = useState(false);
-  const [stockSoloTop, setStockSoloTop] = useState(false);
+  const [topStockCritico, setTopStockCritico] = useState(false);
   const [alerts, setAlerts] = useState<{ tipo: string; titulo: string; descripcion: string; accion: string }[]>([]);
   const [resumen, setResumen] = useState("");
 
@@ -233,12 +233,16 @@ export default function Dashboard() {
                   style={{ padding: "4px 12px", fontSize: 12, border: "1px solid #ddd", borderRadius: 6, cursor: "pointer", background: topSinCuotas ? "#e67e00" : "white", color: topSinCuotas ? "white" : "#333" }}>
                   Sin publicación cuotas
                 </button>
+                <button onClick={() => { setTopStockCritico(v => !v); setTopPage(0); }}
+                  style={{ padding: "4px 12px", fontSize: 12, border: "1px solid #ddd", borderRadius: 6, cursor: "pointer", background: topStockCritico ? "#cc0000" : "white", color: topStockCritico ? "white" : "#333" }}>
+                  Stock crítico
+                </button>
               </div>
             </div>
             {(() => {
-              const filtered = topSinCuotas
-                ? kpis.top_productos.filter(p => p.ventas_premium_cuotas === 0)
-                : kpis.top_productos;
+              const filtered = kpis.top_productos
+                .filter(p => !topSinCuotas || p.ventas_premium_cuotas === 0)
+                .filter(p => !topStockCritico || (p.stock > 0 && p.stock <= 5));
               const sorted = [...filtered].sort((a, b) =>
                 topOrden === "facturacion" ? b.facturacion_periodo - a.facturacion_periodo : b.ventas_periodo - a.ventas_periodo);
               const totalPages = Math.ceil(sorted.length / PAGE_SIZE);
@@ -290,22 +294,11 @@ export default function Dashboard() {
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 24 }}>
             <div style={{ background: "white", border: "1px solid #eee", borderRadius: 10, padding: 16 }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-                <div style={{ fontWeight: 600 }}>Stock crítico ({kpis.stock_critico.length})</div>
-                <button onClick={() => { setStockSoloTop(v => !v); setStockPage(0); }}
-                  style={{ padding: "3px 10px", fontSize: 11, border: "1px solid #ddd", borderRadius: 6, cursor: "pointer", background: stockSoloTop ? "#cc0000" : "white", color: stockSoloTop ? "white" : "#333" }}>
-                  Solo top 30
-                </button>
-              </div>
-              {(() => {
-                const topTitles = new Set(kpis.top_productos.map(p => p.title.toLowerCase()));
-                const stockList = stockSoloTop
-                  ? kpis.stock_critico.filter(p => topTitles.has(p.title.toLowerCase()))
-                  : kpis.stock_critico;
-                return stockList.length === 0
-                ? <div style={{ color: "#888", fontSize: 13 }}>{stockSoloTop ? "Ningún producto del top 30 tiene stock crítico" : "Ninguno"}</div>
+              <div style={{ fontWeight: 600, marginBottom: 12 }}>Stock crítico ({kpis.stock_critico.length})</div>
+              {kpis.stock_critico.length === 0
+                ? <div style={{ color: "#888", fontSize: 13 }}>Ninguno</div>
                 : <>
-                  {stockList.slice(stockPage * STOCK_PAGE_SIZE, (stockPage + 1) * STOCK_PAGE_SIZE).map((p) => (
+                  {kpis.stock_critico.slice(stockPage * STOCK_PAGE_SIZE, (stockPage + 1) * STOCK_PAGE_SIZE).map((p) => (
                     <div key={p.id} style={{ fontSize: 13, padding: "6px 0", borderBottom: "1px solid #f0f0f0", display: "flex", justifyContent: "space-between" }}>
                       <span><strong>{p.n}.</strong> {p.title}</span>
                       <span style={{ color: p.available_quantity <= 2 ? "#cc0000" : "#e67e00", fontWeight: 600, whiteSpace: "nowrap", marginLeft: 8 }}>
@@ -313,17 +306,16 @@ export default function Dashboard() {
                       </span>
                     </div>
                   ))}
-                  {stockList.length > STOCK_PAGE_SIZE && (
+                  {kpis.stock_critico.length > STOCK_PAGE_SIZE && (
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 10, fontSize: 13 }}>
                       <button onClick={() => setStockPage(p => p - 1)} disabled={stockPage === 0}
                         style={{ padding: "4px 12px", border: "1px solid #ddd", borderRadius: 6, cursor: stockPage === 0 ? "default" : "pointer", background: stockPage === 0 ? "#f5f5f5" : "white" }}>←</button>
-                      <span style={{ color: "#888" }}>{stockPage + 1} / {Math.ceil(stockList.length / STOCK_PAGE_SIZE)}</span>
-                      <button onClick={() => setStockPage(p => p + 1)} disabled={(stockPage + 1) * STOCK_PAGE_SIZE >= stockList.length}
-                        style={{ padding: "4px 12px", border: "1px solid #ddd", borderRadius: 6, cursor: (stockPage + 1) * STOCK_PAGE_SIZE >= stockList.length ? "default" : "pointer", background: (stockPage + 1) * STOCK_PAGE_SIZE >= stockList.length ? "#f5f5f5" : "white" }}>→</button>
+                      <span style={{ color: "#888" }}>{stockPage + 1} / {Math.ceil(kpis.stock_critico.length / STOCK_PAGE_SIZE)}</span>
+                      <button onClick={() => setStockPage(p => p + 1)} disabled={(stockPage + 1) * STOCK_PAGE_SIZE >= kpis.stock_critico.length}
+                        style={{ padding: "4px 12px", border: "1px solid #ddd", borderRadius: 6, cursor: (stockPage + 1) * STOCK_PAGE_SIZE >= kpis.stock_critico.length ? "default" : "pointer", background: (stockPage + 1) * STOCK_PAGE_SIZE >= kpis.stock_critico.length ? "#f5f5f5" : "white" }}>→</button>
                     </div>
                   )}
-                </>;
-              })()}
+                </>
             </div>
 
             <div style={{ background: "white", border: "1px solid #eee", borderRadius: 10, padding: 16 }}>
