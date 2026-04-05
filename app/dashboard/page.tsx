@@ -11,7 +11,7 @@ interface KPIs {
   date_from: string;
   date_to: string;
   stock_critico: { n: number; title: string; available_quantity: number; id: string }[];
-  sin_ventas: { n: number; title: string; id: string; stock: number }[];
+  sin_ventas: { n: number; title: string; id: string; stock: number; en_full: boolean }[];
   top_productos: { title: string; sku?: string; en_full: boolean; ventas_normal: number; ventas_premium: number; ventas_premium_cuotas: number; ventas_periodo: number; facturacion_periodo: number; stock: number; precio: number; ventas_historicas: number }[];
 }
 
@@ -312,8 +312,8 @@ export default function Dashboard() {
                 ? <div style={{ color: "#888", fontSize: 13 }}>Ninguna</div>
                 : <>
                   {kpis.sin_ventas.slice(sinVentasPage * PAGE_SIZE, (sinVentasPage + 1) * PAGE_SIZE).map((p) => (
-                    <div key={p.id} style={{ fontSize: 13, padding: "6px 0", borderBottom: "1px solid #f0f0f0", display: "flex", justifyContent: "space-between" }}>
-                      <span><strong>{p.n}.</strong> {p.title}</span>
+                    <div key={p.id} style={{ fontSize: 13, padding: "6px 0", borderBottom: "1px solid #f0f0f0", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <span><strong>{p.n}.</strong> {p.title}{p.en_full && <span style={{ fontSize: 10, padding: "1px 6px", borderRadius: 4, background: "#00a650", color: "white", fontWeight: 600, marginLeft: 6 }}>Full</span>}</span>
                       <span style={{ color: "#888", whiteSpace: "nowrap", marginLeft: 8 }}>{p.stock} u.</span>
                     </div>
                   ))}
