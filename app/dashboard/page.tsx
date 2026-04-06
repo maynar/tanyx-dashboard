@@ -12,7 +12,7 @@ interface KPIs {
   date_to: string;
   stock_critico: { n: number; title: string; available_quantity: number; id: string }[];
   sin_ventas: { n: number; title: string; id: string; stock: number; en_full: boolean }[];
-  top_productos: { title: string; sku?: string; en_full: boolean; ventas_normal: number; ventas_premium: number; ventas_premium_cuotas: number; ventas_periodo: number; facturacion_periodo: number; stock: number; precio: number; ventas_historicas: number }[];
+  top_productos: { title: string; sku?: string; en_full: boolean; ventas_normal: number; ventas_premium: number; ventas_premium_cuotas: number; ventas_periodo: number; facturacion_periodo: number; stock: number; precio: number }[];
 }
 
 const RAILWAY_URL = "https://tanyx-api-production.up.railway.app";
