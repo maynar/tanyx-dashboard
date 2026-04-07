@@ -82,9 +82,10 @@ export async function GET(req: NextRequest) {
     );
   }
 
-  const expiresIn = parseNumber(tokenJson?.expires_in);
-  const maxAge = expiresIn > 0 ? expiresIn : undefined; // segundos
-  const secure = process.env.NODE_ENV === "production";
+  const expiresIn    = parseNumber(tokenJson?.expires_in);
+  const maxAge       = expiresIn > 0 ? expiresIn : undefined; // segundos
+  const refreshToken = tokenJson?.refresh_token as string | undefined;
+  const secure       = process.env.NODE_ENV === "production";
 
   const res = NextResponse.redirect(new URL("/dashboard", req.url), 302);
 
@@ -102,6 +103,15 @@ export async function GET(req: NextRequest) {
     path: "/",
     ...(maxAge ? { maxAge } : {}),
   });
+  if (refreshToken) {
+    res.cookies.set("refresh_token", refreshToken, {
+      httpOnly: true,
+      secure,
+      sameSite: "lax",
+      path: "/",
+      maxAge: 60 * 60 * 24 * 180, // 180 días
+    });
+  }
 
   // Asegura que las cookies queden presentes en el contexto actual.
   cookies(); // no-op, ayuda a evitar edge cases de types/runtime
