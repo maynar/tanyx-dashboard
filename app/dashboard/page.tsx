@@ -177,15 +177,15 @@ export default function Dashboard() {
           style={{ marginTop: 20, padding: "8px 20px", background: analyzing ? "#ccc" : "#00a650", color: "white", border: "none", borderRadius: 6, cursor: "pointer", fontSize: 14 }}>
           {analyzing ? "Analizando..." : "Analizar con IA"}
         </button>
-        <a href="/api/auth/login"
+        <a href="/"
           style={{ marginTop: 20, padding: "8px 20px", background: "#f5f5f5", color: "#333", border: "1px solid #ddd", borderRadius: 6, cursor: "pointer", fontSize: 14, textDecoration: "none" }}>
-          Renovar token
+          Renovar sesión
         </a>
       </div>
 
       {error && (
         <div style={{ background: "#fff0f0", color: "#cc0000", padding: "10px 16px", borderRadius: 8, marginBottom: 16 }}>
-          {error} {error.includes("expirada") && <a href="/api/auth/login" style={{ color: "#cc0000", fontWeight: 600 }}>→ Renovar acá</a>}
+          {error} {error.includes("expirada") && <a href="/" style={{ color: "#cc0000", fontWeight: 600 }}>→ Renovar acá</a>}
         </div>
       )}
       {loading && (
