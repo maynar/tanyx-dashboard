@@ -11,6 +11,7 @@ interface QuiebreItem {
   ventas_diarias: number;
   dias_restantes: number | null;
   estado: string;
+  en_full: boolean;
 }
 
 async function getCredentials(): Promise<{ accessToken: string; userId: string } | null> {
@@ -43,7 +44,7 @@ function kpisToQuiebre(kpis: Record<string, unknown>, days: number): QuiebreItem
   const result: QuiebreItem[] = [];
   const seenTitles = new Set<string>();
 
-  type TopProducto = { title: string; ventas_periodo: number; stock: number };
+  type TopProducto = { title: string; ventas_periodo: number; stock: number; en_full?: boolean };
   type StockCritico = { id: string; title: string; available_quantity: number };
   type SinVentas = { id: string; title: string; stock: number };
 
@@ -58,21 +59,21 @@ function kpisToQuiebre(kpis: Record<string, unknown>, days: number): QuiebreItem
     else if (diasR < 30)    estado = "RIESGO";
     else                    estado = "OK";
 
-    result.push({ id: p.title, title: p.title, stock: p.stock, vendido_periodo: p.ventas_periodo, ventas_diarias: Math.round(daily * 100) / 100, dias_restantes: diasR !== null ? Math.round(diasR * 10) / 10 : null, estado });
+    result.push({ id: p.title, title: p.title, stock: p.stock, vendido_periodo: p.ventas_periodo, ventas_diarias: Math.round(daily * 100) / 100, dias_restantes: diasR !== null ? Math.round(diasR * 10) / 10 : null, estado, en_full: p.en_full ?? false });
     seenTitles.add(p.title);
   }
 
   // 2. stock_critico no en top_productos: stock bajo (1-15) con alguna venta
   for (const p of (kpis.stock_critico as StockCritico[] | undefined) ?? []) {
     if (seenTitles.has(p.title)) continue;
-    result.push({ id: p.id, title: p.title, stock: p.available_quantity, vendido_periodo: 0, ventas_diarias: 0, dias_restantes: null, estado: "CRITICO" });
+    result.push({ id: p.id, title: p.title, stock: p.available_quantity, vendido_periodo: 0, ventas_diarias: 0, dias_restantes: null, estado: "CRITICO", en_full: false });
     seenTitles.add(p.title);
   }
 
   // 3. sin_ventas
   for (const p of (kpis.sin_ventas as SinVentas[] | undefined) ?? []) {
     if (seenTitles.has(p.title)) continue;
-    result.push({ id: p.id, title: p.title, stock: p.stock, vendido_periodo: 0, ventas_diarias: 0, dias_restantes: null, estado: "SIN_VENTAS" });
+    result.push({ id: p.id, title: p.title, stock: p.stock, vendido_periodo: 0, ventas_diarias: 0, dias_restantes: null, estado: "SIN_VENTAS", en_full: false });
     seenTitles.add(p.title);
   }
 
