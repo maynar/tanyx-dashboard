@@ -49,33 +49,31 @@ function kpisToQuiebre(kpis: Record<string, unknown>, days: number): QuiebreItem
 
   // 1. top_productos: velocidad exacta por producto
   for (const p of (kpis.top_productos as TopProducto[] | undefined) ?? []) {
-    const daily       = p.ventas_periodo / days;
-    const diasR       = daily > 0 ? p.stock / daily : null;
+    const daily = p.ventas_periodo / days;
+    const diasR = daily > 0 ? p.stock / daily : null;
     let estado: string;
-    if (p.stock === 0)    estado = "QUEBRADO";
+    if (p.stock === 0)       estado = "QUEBRADO";
     else if (diasR === null) estado = "SIN_VENTAS";
-    else if (diasR < 7)   estado = "CRITICO";
-    else if (diasR < 30)  estado = "RIESGO";
-    else                  estado = "OK";
+    else if (diasR < 7)     estado = "CRITICO";
+    else if (diasR < 30)    estado = "RIESGO";
+    else                    estado = "OK";
 
     result.push({ id: p.title, title: p.title, stock: p.stock, vendido_periodo: p.ventas_periodo, ventas_diarias: Math.round(daily * 100) / 100, dias_restantes: diasR !== null ? Math.round(diasR * 10) / 10 : null, estado });
-    seenTitles.add(p.title.toLowerCase());
+    seenTitles.add(p.title);
   }
 
-  // 2. stock_critico no incluido en top_productos: stock bajo + alguna venta reciente
+  // 2. stock_critico no en top_productos: stock bajo (1-15) con alguna venta
   for (const p of (kpis.stock_critico as StockCritico[] | undefined) ?? []) {
-    if (seenTitles.has(p.title.toLowerCase())) continue;
-    // Stock bajo (1-15), no en sin_ventas → tiene ventas, pero no sabemos exactas.
-    // Marcamos como CRITICO ya que stock ≤ 15.
+    if (seenTitles.has(p.title)) continue;
     result.push({ id: p.id, title: p.title, stock: p.available_quantity, vendido_periodo: 0, ventas_diarias: 0, dias_restantes: null, estado: "CRITICO" });
-    seenTitles.add(p.title.toLowerCase());
+    seenTitles.add(p.title);
   }
 
-  // 3. sin_ventas: sin ventas en el período
+  // 3. sin_ventas
   for (const p of (kpis.sin_ventas as SinVentas[] | undefined) ?? []) {
-    if (seenTitles.has(p.title.toLowerCase())) continue;
+    if (seenTitles.has(p.title)) continue;
     result.push({ id: p.id, title: p.title, stock: p.stock, vendido_periodo: 0, ventas_diarias: 0, dias_restantes: null, estado: "SIN_VENTAS" });
-    seenTitles.add(p.title.toLowerCase());
+    seenTitles.add(p.title);
   }
 
   const urgencyOrder: Record<string, number> = { QUEBRADO: 0, CRITICO: 1, RIESGO: 2, SIN_VENTAS: 3, OK: 4 };
