@@ -72,11 +72,24 @@ export async function POST(req: Request) {
 
 async function _post(req: Request) {
   const body = await req.json().catch(() => null);
+
+  // Modo libre: si llega un campo `prompt` directo, responde texto plano (para email de quiebre)
+  if (body?.prompt && !body?.kpis) {
+    const anthropic = getClient();
+    const response = await anthropic.messages.create({
+      model: "claude-sonnet-4-6",
+      max_tokens: 1500,
+      messages: [{ role: "user", content: body.prompt as string }],
+    });
+    const text = response.content.find(b => b.type === "text")?.text ?? "";
+    return NextResponse.json({ text });
+  }
+
   const kpis: KPIs | undefined = body?.kpis ?? (body?.total_ventas != null ? body : undefined);
   const access_token: string | undefined = body?.access_token;
 
   if (!kpis) {
-    return NextResponse.json({ error: "invalid_body", message: "No se recibieron KPIs." }, { status: 400 });
+    return NextResponse.json({ error: "invalid_body", message: "No se recibieron KPIs ni prompt." }, { status: 400 });
   }
 
   // Buscar competidores para top 5 productos en paralelo

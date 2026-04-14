@@ -177,6 +177,10 @@ export default function Dashboard() {
           style={{ marginTop: 20, padding: "8px 20px", background: analyzing ? "#ccc" : "#00a650", color: "white", border: "none", borderRadius: 6, cursor: "pointer", fontSize: 14 }}>
           {analyzing ? "Analizando..." : "Analizar con IA"}
         </button>
+        <a href="/stock-agent"
+          style={{ marginTop: 20, padding: "8px 20px", background: "#1e293b", color: "white", border: "none", borderRadius: 6, cursor: "pointer", fontSize: 14, textDecoration: "none", display: "flex", alignItems: "center", gap: 6 }}>
+          🚨 Quiebre de stock
+        </a>
         <a href="/"
           style={{ marginTop: 20, padding: "8px 20px", background: "#f5f5f5", color: "#333", border: "1px solid #ddd", borderRadius: 6, cursor: "pointer", fontSize: 14, textDecoration: "none" }}>
           Renovar sesión
