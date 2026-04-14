@@ -251,7 +251,7 @@ Solo devolvé el cuerpo del email.
               <table style={s.table}>
                 <thead>
                   <tr>
-                    {["Estado", "Días restantes", "Stock", "Vta/día", "Vendido período", "Producto"].map(h => (
+                    {["Estado", "Días restantes", "Stock", "Vta/día", "Vendido período", "Producto", ""].map(h => (
                       <th key={h} style={s.th}>{h}</th>
                     ))}
                   </tr>
@@ -285,6 +285,13 @@ Solo devolvé el cuerpo del email.
                       <td style={s.td}>
                         <span style={s.productName}>{item.title}</span>
                       </td>
+                      <td style={s.td}>
+                        {item.en_full && (
+                          <span style={s.fullBadge} title="Stock Full (depósito ML) — no sincroniza con ERP">
+                            Full ⚠️
+                          </span>
+                        )}
+                      </td>
                     </tr>
                   ))}
                   {visibleItems.length === 0 && (
@@ -297,6 +304,13 @@ Solo devolvé el cuerpo del email.
                 </tbody>
               </table>
             </div>
+
+            {/* Leyenda Full */}
+            {visibleItems.some(i => i.en_full) && (
+              <div style={{ marginTop: 12, padding: "8px 12px", background: "#fef9c3", borderRadius: 8, fontSize: 12, color: "#854d0e", border: "1px solid #fde047" }}>
+                ⚠️ <strong>Full ⚠️</strong>: el stock mostrado viene de ML (depósito Full), no del ERP. Verificar stock real antes de reponer.
+              </div>
+            )}
 
             {/* Botón generar email */}
             <div style={{ marginTop: 16, display: "flex", gap: 8, alignItems: "center" }}>
@@ -401,6 +415,7 @@ const s = {
   estadoBadge:      { display: "inline-block", padding: "2px 8px", borderRadius: 6, fontWeight: 700, fontSize: 11, whiteSpace: "nowrap" },
   diasBadge:        { display: "inline-block", padding: "2px 10px", borderRadius: 20, fontWeight: 700, fontSize: 12, fontFamily: "monospace" },
   productName:      { fontWeight: 500, color: "#0f172a" },
+  fullBadge:        { display: "inline-block", padding: "2px 7px", borderRadius: 6, fontSize: 11, fontWeight: 700, background: "#fef9c3", color: "#854d0e", border: "1px solid #fde047", whiteSpace: "nowrap" },
   emailBtn:         { padding: "8px 18px", borderRadius: 8, border: "none", background: "#6366f1", color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 8 },
   actionBtn:        { padding: "6px 14px", borderRadius: 8, border: "1.5px solid #e2e8f0", background: "#fff", color: "#334155", fontSize: 12, fontWeight: 600, cursor: "pointer" },
   actionBtnPrimary: { background: "#0f172a", color: "#fff", border: "none" },
