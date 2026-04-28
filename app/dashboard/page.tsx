@@ -44,10 +44,12 @@ export default function Dashboard() {
   const [cachedAt, setCachedAt] = useState<string | null>(null);
   const STOCK_PAGE_SIZE = 10;
   const PAGE_SIZE = 20;
-  const [topOrden, setTopOrden] = useState<"ventas" | "facturacion">("ventas");
+  const TOP_PAGE_SIZE = 50;
+  const [topOrden, setTopOrden] = useState<"ventas" | "facturacion">("facturacion");
   const [topSinCuotas, setTopSinCuotas] = useState(false);
   const [topStockCritico, setTopStockCritico] = useState(false);
   const [topSinFull, setTopSinFull] = useState(false);
+  const [topSearch, setTopSearch] = useState("");
   const [alerts, setAlerts] = useState<{ tipo: string; titulo: string; descripcion: string; accion: string }[]>([]);
   const [resumen, setResumen] = useState("");
 
@@ -226,6 +228,14 @@ export default function Dashboard() {
             <div style={{ marginBottom: 14 }}>
               <div style={{ fontWeight: 600, marginBottom: 10 }}>Top 40 más vendidos del período</div>
               <div style={{ background: "#f4f6fa", border: "1px solid #e2e6f0", borderRadius: 8, padding: "10px 12px", display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+                <input
+                  type="text"
+                  placeholder="Buscar producto..."
+                  value={topSearch}
+                  onChange={e => { setTopSearch(e.target.value); setTopPage(0); }}
+                  style={{ padding: "5px 10px", fontSize: 12, border: "1px solid #ddd", borderRadius: 6, minWidth: 180, outline: "none" }}
+                />
+                <div style={{ width: 1, background: "#d0d7e6", alignSelf: "stretch", margin: "0 4px" }} />
                 <span style={{ fontSize: 11, color: "#888", marginRight: 4, whiteSpace: "nowrap" }}>Ordenar:</span>
                 <button onClick={() => setTopOrden("ventas")}
                   style={{ padding: "5px 14px", fontSize: 12, border: "1px solid #ddd", borderRadius: 6, cursor: "pointer", background: topOrden === "ventas" ? "#3483FA" : "white", color: topOrden === "ventas" ? "white" : "#333", fontWeight: topOrden === "ventas" ? 600 : 400 }}>
@@ -252,14 +262,16 @@ export default function Dashboard() {
               </div>
             </div>
             {(() => {
+              const searchLower = topSearch.toLowerCase();
               const filtered = kpis.top_productos
+                .filter(p => !topSearch || p.title.toLowerCase().includes(searchLower) || (p.sku ?? "").toLowerCase().includes(searchLower))
                 .filter(p => !topSinCuotas || p.ventas_premium_cuotas === 0)
                 .filter(p => !topStockCritico || (p.stock > 0 && p.stock <= 15))
                 .filter(p => !topSinFull || !p.en_full);
               const sorted = [...filtered].sort((a, b) =>
                 topOrden === "facturacion" ? b.facturacion_periodo - a.facturacion_periodo : b.ventas_periodo - a.ventas_periodo);
-              const totalPages = Math.ceil(sorted.length / PAGE_SIZE);
-              const page = sorted.slice(topPage * PAGE_SIZE, (topPage + 1) * PAGE_SIZE);
+              const totalPages = Math.ceil(sorted.length / TOP_PAGE_SIZE);
+              const page = sorted.slice(topPage * TOP_PAGE_SIZE, (topPage + 1) * TOP_PAGE_SIZE);
               return <>
                 <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
                   <thead>
@@ -277,7 +289,7 @@ export default function Dashboard() {
                   <tbody>
                     {page.map((p, i) => (
                       <tr key={i} style={{ borderBottom: "1px solid #f5f5f5" }}>
-                        <td style={{ padding: "8px 10px", color: "#888" }}>{topPage * PAGE_SIZE + i + 1}</td>
+                        <td style={{ padding: "8px 10px", color: "#888" }}>{topPage * TOP_PAGE_SIZE + i + 1}</td>
                         <td style={{ padding: "8px 10px" }}>
                           <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
                             <span>{p.title}</span>
@@ -304,6 +316,9 @@ export default function Dashboard() {
                       style={{ padding: "4px 12px", border: "1px solid #ddd", borderRadius: 6, cursor: topPage + 1 >= totalPages ? "default" : "pointer", background: topPage + 1 >= totalPages ? "#f5f5f5" : "white" }}>→</button>
                   </div>
                 )}
+                <div style={{ fontSize: 12, color: "#aaa", marginTop: 8, textAlign: "right" }}>
+                  {sorted.length} productos · ordenado por {topOrden === "facturacion" ? "facturación" : "unidades vendidas"}
+                </div>
               </>;
             })()}
           </div>
