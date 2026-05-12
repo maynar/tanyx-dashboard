@@ -1,9 +1,11 @@
 "use client";
 import { useEffect, useState } from "react";
+import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from "recharts";
 
 interface KPIs {
   total_ventas: number;
   facturacion_estimada: number;
+  facturacion_sin_iva: number;
   total_visitas: number;
   conversion_rate: number;
   ticket_promedio: number;
@@ -12,6 +14,7 @@ interface KPIs {
   date_to: string;
   stock_critico: { n: number; title: string; available_quantity: number; id: string }[];
   sin_ventas: { n: number; title: string; id: string; stock: number; en_full: boolean }[];
+  ventas_por_categoria: { category_id: string; nombre: string; ventas: number; facturacion: number }[];
   top_productos: { title: string; sku?: string; en_full: boolean; ventas_normal: number; ventas_premium: number; ventas_premium_cuotas: number; ventas_periodo: number; facturacion_periodo: number; stock: number; precio: number }[];
 }
 
@@ -120,8 +123,9 @@ export default function Dashboard() {
       setKpis(data);
       setStockPage(0);
       setCachedAt(new Date().toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" }));
-    } catch {
-      setError("Error cargando datos");
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      setError("Error cargando datos: " + msg);
     } finally {
       setLoading(false);
     }
@@ -211,7 +215,8 @@ export default function Dashboard() {
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 12, marginBottom: 24 }}>
             {[
               { label: "Ventas en período", value: fmt(kpis.total_ventas) },
-              { label: "Facturación", value: fmtMoney(kpis.facturacion_estimada) },
+              { label: "Facturación bruta", value: fmtMoney(kpis.facturacion_estimada) },
+              { label: "Facturación sin IVA", value: fmtMoney(kpis.facturacion_sin_iva) },
               { label: "Visitas", value: fmt(kpis.total_visitas) },
               { label: "Conversión", value: kpis.conversion_rate.toFixed(2) + "%" },
               { label: "Ticket promedio", value: fmtMoney(kpis.ticket_promedio) },
@@ -227,38 +232,42 @@ export default function Dashboard() {
           <div style={{ background: "white", border: "1px solid #eee", borderRadius: 10, padding: 16, marginBottom: 24 }}>
             <div style={{ marginBottom: 14 }}>
               <div style={{ fontWeight: 600, marginBottom: 10 }}>Top 40 más vendidos del período</div>
-              <div style={{ background: "#f4f6fa", border: "1px solid #e2e6f0", borderRadius: 8, padding: "10px 12px", display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-                <input
-                  type="text"
-                  placeholder="Buscar producto..."
-                  value={topSearch}
-                  onChange={e => { setTopSearch(e.target.value); setTopPage(0); }}
-                  style={{ padding: "5px 10px", fontSize: 12, border: "1px solid #ddd", borderRadius: 6, minWidth: 180, outline: "none" }}
-                />
-                <div style={{ width: 1, background: "#d0d7e6", alignSelf: "stretch", margin: "0 4px" }} />
-                <span style={{ fontSize: 11, color: "#888", marginRight: 4, whiteSpace: "nowrap" }}>Ordenar:</span>
-                <button onClick={() => setTopOrden("ventas")}
-                  style={{ padding: "5px 14px", fontSize: 12, border: "1px solid #ddd", borderRadius: 6, cursor: "pointer", background: topOrden === "ventas" ? "#3483FA" : "white", color: topOrden === "ventas" ? "white" : "#333", fontWeight: topOrden === "ventas" ? 600 : 400 }}>
-                  Por ventas
-                </button>
-                <button onClick={() => setTopOrden("facturacion")}
-                  style={{ padding: "5px 14px", fontSize: 12, border: "1px solid #ddd", borderRadius: 6, cursor: "pointer", background: topOrden === "facturacion" ? "#3483FA" : "white", color: topOrden === "facturacion" ? "white" : "#333", fontWeight: topOrden === "facturacion" ? 600 : 400 }}>
-                  Por facturación
-                </button>
-                <div style={{ width: 1, background: "#d0d7e6", alignSelf: "stretch", margin: "0 4px" }} />
-                <span style={{ fontSize: 11, color: "#888", marginRight: 4, whiteSpace: "nowrap" }}>Filtrar:</span>
-                <button onClick={() => { setTopSinCuotas(v => !v); setTopPage(0); }}
-                  style={{ padding: "5px 14px", fontSize: 12, border: `1px solid ${topSinCuotas ? "#e67e00" : "#ddd"}`, borderRadius: 6, cursor: "pointer", background: topSinCuotas ? "#e67e00" : "white", color: topSinCuotas ? "white" : "#333", fontWeight: topSinCuotas ? 600 : 400 }}>
-                  Sin publicación cuotas
-                </button>
-                <button onClick={() => { setTopStockCritico(v => !v); setTopPage(0); }}
-                  style={{ padding: "5px 14px", fontSize: 12, border: `1px solid ${topStockCritico ? "#cc0000" : "#ddd"}`, borderRadius: 6, cursor: "pointer", background: topStockCritico ? "#cc0000" : "white", color: topStockCritico ? "white" : "#333", fontWeight: topStockCritico ? 600 : 400 }}>
-                  Stock crítico
-                </button>
-                <button onClick={() => { setTopSinFull(v => !v); setTopPage(0); }}
-                  style={{ padding: "5px 14px", fontSize: 12, border: `1px solid ${topSinFull ? "#6f42c1" : "#ddd"}`, borderRadius: 6, cursor: "pointer", background: topSinFull ? "#6f42c1" : "white", color: topSinFull ? "white" : "#333", fontWeight: topSinFull ? 600 : 400 }}>
-                  Sin Full
-                </button>
+              <div style={{ background: "#f4f6fa", border: "1px solid #e2e6f0", borderRadius: 10, padding: "12px 14px", display: "flex", flexDirection: "column", gap: 10 }}>
+                <div style={{ position: "relative" }}>
+                  <svg style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", color: "#aaa", pointerEvents: "none" }} width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                  <input
+                    type="text"
+                    placeholder="Buscar por nombre o SKU..."
+                    value={topSearch}
+                    onChange={e => { setTopSearch(e.target.value); setTopPage(0); }}
+                    style={{ width: "100%", padding: "8px 12px 8px 32px", fontSize: 13, border: "1px solid #d0d7e6", borderRadius: 8, outline: "none", background: "white", boxSizing: "border-box" }}
+                  />
+                </div>
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+                  <span style={{ fontSize: 11, color: "#888", whiteSpace: "nowrap", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.04em" }}>Orden:</span>
+                  <button onClick={() => setTopOrden("ventas")}
+                    style={{ padding: "5px 14px", fontSize: 12, border: `1.5px solid ${topOrden === "ventas" ? "#3483FA" : "#ddd"}`, borderRadius: 6, cursor: "pointer", background: topOrden === "ventas" ? "#3483FA" : "white", color: topOrden === "ventas" ? "white" : "#555", fontWeight: topOrden === "ventas" ? 600 : 400 }}>
+                    Ventas
+                  </button>
+                  <button onClick={() => setTopOrden("facturacion")}
+                    style={{ padding: "5px 14px", fontSize: 12, border: `1.5px solid ${topOrden === "facturacion" ? "#3483FA" : "#ddd"}`, borderRadius: 6, cursor: "pointer", background: topOrden === "facturacion" ? "#3483FA" : "white", color: topOrden === "facturacion" ? "white" : "#555", fontWeight: topOrden === "facturacion" ? 600 : 400 }}>
+                    Facturación
+                  </button>
+                  <div style={{ width: 1, background: "#d0d7e6", alignSelf: "stretch", margin: "0 2px" }} />
+                  <span style={{ fontSize: 11, color: "#888", whiteSpace: "nowrap", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.04em" }}>Filtros:</span>
+                  <button onClick={() => { setTopSinCuotas(v => !v); setTopPage(0); }}
+                    style={{ padding: "5px 12px", fontSize: 12, border: `1.5px solid ${topSinCuotas ? "#e67e00" : "#ddd"}`, borderRadius: 6, cursor: "pointer", background: topSinCuotas ? "#fff4e6" : "white", color: topSinCuotas ? "#c96800" : "#555", fontWeight: topSinCuotas ? 600 : 400 }}>
+                    {topSinCuotas ? "✕ " : ""}Sin cuotas
+                  </button>
+                  <button onClick={() => { setTopStockCritico(v => !v); setTopPage(0); }}
+                    style={{ padding: "5px 12px", fontSize: 12, border: `1.5px solid ${topStockCritico ? "#cc0000" : "#ddd"}`, borderRadius: 6, cursor: "pointer", background: topStockCritico ? "#fff0f0" : "white", color: topStockCritico ? "#cc0000" : "#555", fontWeight: topStockCritico ? 600 : 400 }}>
+                    {topStockCritico ? "✕ " : ""}Stock crítico
+                  </button>
+                  <button onClick={() => { setTopSinFull(v => !v); setTopPage(0); }}
+                    style={{ padding: "5px 12px", fontSize: 12, border: `1.5px solid ${topSinFull ? "#6f42c1" : "#ddd"}`, borderRadius: 6, cursor: "pointer", background: topSinFull ? "#f5f0ff" : "white", color: topSinFull ? "#6f42c1" : "#555", fontWeight: topSinFull ? 600 : 400 }}>
+                    {topSinFull ? "✕ " : ""}Sin Full
+                  </button>
+                </div>
               </div>
             </div>
             {(() => {
@@ -322,6 +331,36 @@ export default function Dashboard() {
               </>;
             })()}
           </div>
+
+          {kpis.ventas_por_categoria?.length > 0 && (() => {
+            const COLORS = ["#3483FA","#00a650","#e67e00","#cc0000","#6f42c1","#17a2b8","#fd7e14","#20c997","#e83e8c","#6c757d"];
+            const data = kpis.ventas_por_categoria.slice(0, 10);
+            return (
+              <div style={{ background: "white", border: "1px solid #eee", borderRadius: 10, padding: 16, marginBottom: 24 }}>
+                <div style={{ fontWeight: 600, marginBottom: 16 }}>Ventas por categoría</div>
+                <div style={{ display: "flex", gap: 24, flexWrap: "wrap", alignItems: "center" }}>
+                  <ResponsiveContainer width={300} height={280}>
+                    <PieChart>
+                      <Pie data={data} dataKey="facturacion" nameKey="nombre" cx="50%" cy="50%" outerRadius={110} innerRadius={55}>
+                        {data.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+                      </Pie>
+                      <Tooltip formatter={(v) => fmtMoney(Number(v))} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                  <div style={{ flex: 1, minWidth: 200 }}>
+                    {data.map((c, i) => (
+                      <div key={c.category_id} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8, fontSize: 13 }}>
+                        <div style={{ width: 12, height: 12, borderRadius: 3, background: COLORS[i % COLORS.length], flexShrink: 0 }} />
+                        <span style={{ flex: 1, color: "#333" }}>{c.nombre}</span>
+                        <span style={{ color: "#888", whiteSpace: "nowrap" }}>{fmt(c.ventas)} u.</span>
+                        <span style={{ fontWeight: 600, whiteSpace: "nowrap", minWidth: 100, textAlign: "right" }}>{fmtMoney(c.facturacion)}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 16, marginBottom: 24 }}>
             <div style={{ background: "white", border: "1px solid #eee", borderRadius: 10, padding: 16 }}>
