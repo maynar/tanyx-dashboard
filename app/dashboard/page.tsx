@@ -47,7 +47,7 @@ export default function Dashboard() {
   const [cachedAt, setCachedAt] = useState<string | null>(null);
   const STOCK_PAGE_SIZE = 10;
   const PAGE_SIZE = 20;
-  const TOP_PAGE_SIZE = 50;
+  const TOP_PAGE_SIZE = 25;
   const [topOrden, setTopOrden] = useState<"ventas" | "facturacion">("facturacion");
   const [topSinCuotas, setTopSinCuotas] = useState(false);
   const [topStockCritico, setTopStockCritico] = useState(false);
