@@ -115,7 +115,7 @@ export default function Dashboard() {
         await fetch(`${RAILWAY_URL}/api/ml/cache?user_id=${user_id}&date_from=${from}&date_to=${to}`, { method: "DELETE" });
       }
       const r = await fetch(
-        `${RAILWAY_URL}/api/ml/kpis?user_id=${user_id}&access_token=${access_token}&date_from=${from}&date_to=${to}`
+        `${RAILWAY_URL}/api/ml/kpis?user_id=${user_id}&access_token=${access_token}&date_from=${from}&date_to=${to}&force=${forceRefresh}`
       );
       const data = await r.json();
       if (data.error) { setError(data.error); return; }
