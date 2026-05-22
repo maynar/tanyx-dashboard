@@ -32,6 +32,7 @@ function fmtDate(iso: string) {
 }
 
 export default function Dashboard() {
+  console.log("=== DASHBOARD V2 CARGADO ===");
   const today = new Date().toISOString().split("T")[0];
   const ago30 = new Date(Date.now() - 30 * 86400000).toISOString().split("T")[0];
 
@@ -55,6 +56,12 @@ export default function Dashboard() {
   const [topSearch, setTopSearch] = useState("");
   const [alerts, setAlerts] = useState<{ tipo: string; titulo: string; descripcion: string; accion: string }[]>([]);
   const [resumen, setResumen] = useState("");
+  const [kpisComp, setKpisComp] = useState<KPIs | null>(null);
+  const [loadingComp, setLoadingComp] = useState(false);
+  const [errorComp, setErrorComp] = useState("");
+  const [compSearch, setCompSearch] = useState("");
+  const [showComparacion, setShowComparacion] = useState(true);
+  const [priceNotes, setPriceNotes] = useState<Record<string, string>>({});
 
   const CACHE_TTL_MS = 30 * 60 * 1000; // 30 minutos
 
@@ -78,6 +85,51 @@ export default function Dashboard() {
 
   function clearCache(key: string) {
     try { localStorage.removeItem(key); } catch {}
+  }
+
+  function getPrevPeriod(from: string, to: string) {
+    const d1 = new Date(from + "T12:00:00");
+    const d2 = new Date(to + "T12:00:00");
+    const days = Math.round((d2.getTime() - d1.getTime()) / 86400000) + 1;
+    const prevTo = new Date(d1.getTime() - 86400000).toISOString().split("T")[0];
+    const prevFrom = new Date(d1.getTime() - days * 86400000).toISOString().split("T")[0];
+    return { prevFrom, prevTo, days };
+  }
+
+  async function loadKpisComp(from: string, to: string) {
+    const { prevFrom, prevTo } = getPrevPeriod(from, to);
+    console.log("[comp] cargando período", prevFrom, "→", prevTo);
+    setLoadingComp(true);
+    setKpisComp(null);
+    setErrorComp("");
+    try {
+      const { access_token, user_id } = await getCredentials();
+      console.log("[comp] credenciales ok, user_id=", user_id, "token=", !!access_token);
+      if (!access_token || !user_id) { setErrorComp("Sin credenciales"); return; }
+      const key = cacheKey(user_id, prevFrom, prevTo);
+      const cached = readCache(key);
+      if (cached) { console.log("[comp] desde caché"); setKpisComp(cached); return; }
+      console.log("[comp] fetch API...");
+      const r = await fetch(
+        `${RAILWAY_URL}/api/ml/kpis?user_id=${user_id}&access_token=${access_token}&date_from=${prevFrom}&date_to=${prevTo}&force=false`
+      );
+      const data = await r.json();
+      console.log("[comp] respuesta:", data.error ?? `ok, ${data.top_productos?.length} productos`);
+      if (data.error) { setErrorComp(data.error); return; }
+      writeCache(key, data);
+      setKpisComp(data);
+    } catch (e) {
+      console.error("[comp] error:", e);
+      setErrorComp(e instanceof Error ? e.message : String(e));
+    } finally {
+      setLoadingComp(false);
+    }
+  }
+
+  function savePriceNote(title: string, note: string) {
+    const updated = { ...priceNotes, [title]: note };
+    setPriceNotes(updated);
+    try { localStorage.setItem("tanyx_price_notes", JSON.stringify(updated)); } catch {}
   }
 
   async function getCredentials() {
@@ -155,6 +207,34 @@ export default function Dashboard() {
   }
 
   useEffect(() => { loadKpis(dateFrom, dateTo); }, []);
+  useEffect(() => {
+    console.log("[comp] kpis cambió, kpis=", !!kpis, "dateFrom=", dateFrom, "dateTo=", dateTo);
+    if (kpis) loadKpisComp(dateFrom, dateTo);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [kpis]);
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("tanyx_price_notes");
+      if (saved) setPriceNotes(JSON.parse(saved));
+    } catch {}
+  }, []);
+
+  const prevPeriod = getPrevPeriod(dateFrom, dateTo);
+  const prevMap = new Map((kpisComp?.top_productos ?? []).map(p => [p.title, p]));
+  const compRows = (kpis?.top_productos ?? [])
+    .map(curr => {
+      const prev = prevMap.get(curr.title);
+      return {
+        title: curr.title,
+        sku: curr.sku,
+        ventasCurr: curr.ventas_periodo,
+        ventasPrev: prev?.ventas_periodo ?? 0,
+        precioCurr: curr.precio,
+        precioPrev: prev?.precio ?? curr.precio,
+      };
+    })
+    .filter(p => !compSearch || p.title.toLowerCase().includes(compSearch.toLowerCase()) || (p.sku ?? "").toLowerCase().includes(compSearch.toLowerCase()))
+    .sort((a, b) => (a.ventasCurr - a.ventasPrev) - (b.ventasCurr - b.ventasPrev));
 
   return (
     <div style={{ fontFamily: "sans-serif", maxWidth: 1100, margin: "0 auto", padding: "20px" }}>
@@ -330,6 +410,114 @@ export default function Dashboard() {
                 </div>
               </>;
             })()}
+          </div>
+
+          {/* ===== COMPARACIÓN DE VENTAS ===== */}
+          <div style={{ background: "white", border: "1px solid #eee", borderRadius: 10, padding: 16, marginBottom: 24 }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
+              <div style={{ fontWeight: 600 }}>Comparación de ventas por producto</div>
+              <button onClick={() => setShowComparacion(v => !v)}
+                style={{ fontSize: 12, color: "#888", background: "none", border: "none", cursor: "pointer" }}>
+                {showComparacion ? "Ocultar ▲" : "Mostrar ▼"}
+              </button>
+            </div>
+            <div style={{ fontSize: 12, color: "#888", marginBottom: showComparacion ? 12 : 0 }}>
+              {loadingComp
+                ? "Cargando período anterior..."
+                : `Período anterior (${prevPeriod.days} días): ${fmtDate(prevPeriod.prevFrom)} → ${fmtDate(prevPeriod.prevTo)}`}
+            </div>
+
+            {showComparacion && loadingComp && (
+              <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "20px 0", color: "#888", fontSize: 13 }}>
+                <div style={{ width: 18, height: 18, border: "3px solid #eee", borderTop: "3px solid #3483FA", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
+                Cargando datos del período anterior...
+              </div>
+            )}
+
+            {showComparacion && !loadingComp && errorComp && (
+              <div style={{ color: "#cc0000", fontSize: 13, padding: "10px 0" }}>
+                Error: {errorComp}
+                <button onClick={() => loadKpisComp(dateFrom, dateTo)}
+                  style={{ marginLeft: 10, fontSize: 12, color: "#3483FA", background: "none", border: "none", cursor: "pointer", textDecoration: "underline" }}>
+                  Reintentar
+                </button>
+              </div>
+            )}
+
+            {showComparacion && !loadingComp && kpisComp && (
+              <>
+                <div style={{ position: "relative", marginBottom: 12 }}>
+                  <svg style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", color: "#aaa", pointerEvents: "none" }} width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                  <input type="text" placeholder="Buscar por nombre o SKU..." value={compSearch}
+                    onChange={e => setCompSearch(e.target.value)}
+                    style={{ width: "100%", padding: "7px 12px 7px 32px", fontSize: 13, border: "1px solid #d0d7e6", borderRadius: 8, outline: "none", boxSizing: "border-box" }} />
+                </div>
+                <div style={{ overflowX: "auto" }}>
+                  <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+                    <thead>
+                      <tr style={{ background: "#f8f8f8" }}>
+                        <th style={{ padding: "8px 10px", textAlign: "left", borderBottom: "1px solid #eee" }}>#</th>
+                        <th style={{ padding: "8px 10px", textAlign: "left", borderBottom: "1px solid #eee" }}>Producto</th>
+                        <th style={{ padding: "8px 10px", textAlign: "right", borderBottom: "1px solid #eee", color: "#888" }}>Anterior</th>
+                        <th style={{ padding: "8px 10px", textAlign: "right", borderBottom: "1px solid #eee", fontWeight: 700 }}>Actual</th>
+                        <th style={{ padding: "8px 10px", textAlign: "center", borderBottom: "1px solid #eee" }}>Variación</th>
+                        <th style={{ padding: "8px 10px", textAlign: "right", borderBottom: "1px solid #eee", color: "#888" }}>Precio ant.</th>
+                        <th style={{ padding: "8px 10px", textAlign: "right", borderBottom: "1px solid #eee" }}>Precio act.</th>
+                        <th style={{ padding: "8px 10px", textAlign: "left", borderBottom: "1px solid #eee", color: "#888", minWidth: 160 }}>Motivo cambio precio</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {compRows.map((p, i) => {
+                        const delta = p.ventasCurr - p.ventasPrev;
+                        const deltaPct = p.ventasPrev > 0 ? Math.round((delta / p.ventasPrev) * 100) : null;
+                        const priceDelta = p.precioCurr - p.precioPrev;
+                        const pricePct = p.precioPrev > 0 ? Math.round((priceDelta / p.precioPrev) * 100) : 0;
+                        const priceChanged = Math.abs(pricePct) >= 1;
+                        return (
+                          <tr key={i} style={{ borderBottom: "1px solid #f5f5f5", background: delta < 0 ? "#fff8f8" : "white" }}>
+                            <td style={{ padding: "8px 10px", color: "#888" }}>{i + 1}</td>
+                            <td style={{ padding: "8px 10px" }}>
+                              <div>{p.title}</div>
+                              {p.sku && <div style={{ fontSize: 11, color: "#aaa" }}>SKU: {p.sku}</div>}
+                            </td>
+                            <td style={{ padding: "8px 10px", textAlign: "right", color: "#888" }}>{fmt(p.ventasPrev)}</td>
+                            <td style={{ padding: "8px 10px", textAlign: "right", fontWeight: 700 }}>{fmt(p.ventasCurr)}</td>
+                            <td style={{ padding: "8px 10px", textAlign: "center" }}>
+                              {delta > 0 && <span style={{ color: "#00a650", fontWeight: 600, whiteSpace: "nowrap" }}>▲ +{fmt(delta)}{deltaPct !== null ? ` (${deltaPct}%)` : ""}</span>}
+                              {delta < 0 && <span style={{ color: "#cc0000", fontWeight: 600, whiteSpace: "nowrap" }}>▼ {fmt(delta)}{deltaPct !== null ? ` (${deltaPct}%)` : ""}</span>}
+                              {delta === 0 && <span style={{ color: "#aaa" }}>→ igual</span>}
+                            </td>
+                            <td style={{ padding: "8px 10px", textAlign: "right", color: "#888" }}>{fmtMoney(p.precioPrev)}</td>
+                            <td style={{ padding: "8px 10px", textAlign: "right", whiteSpace: "nowrap" }}>
+                              {fmtMoney(p.precioCurr)}
+                              {priceChanged && (
+                                <span style={{ fontSize: 10, marginLeft: 4, color: priceDelta > 0 ? "#00a650" : "#cc0000", fontWeight: 600 }}>
+                                  {priceDelta > 0 ? "▲" : "▼"} {pricePct > 0 ? "+" : ""}{pricePct}%
+                                </span>
+                              )}
+                            </td>
+                            <td style={{ padding: "8px 10px" }}>
+                              {priceChanged
+                                ? <input type="text"
+                                    placeholder={priceDelta < 0 ? "¿Por qué bajó?" : "¿Por qué subió?"}
+                                    value={priceNotes[p.title] ?? ""}
+                                    onChange={e => savePriceNote(p.title, e.target.value)}
+                                    style={{ width: "100%", padding: "4px 8px", fontSize: 12, border: "1px solid #e0e0e0", borderRadius: 6, outline: "none", background: priceDelta < 0 ? "#fff4f4" : "#f4fff8" }}
+                                  />
+                                : <span style={{ color: "#ddd" }}>—</span>
+                              }
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+                <div style={{ fontSize: 12, color: "#aaa", marginTop: 8, textAlign: "right" }}>
+                  {compRows.length} productos · ordenado por mayor caída de ventas primero
+                </div>
+              </>
+            )}
           </div>
 
           {kpis.ventas_por_categoria?.length > 0 && (() => {
