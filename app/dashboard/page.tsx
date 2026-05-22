@@ -32,7 +32,6 @@ function fmtDate(iso: string) {
 }
 
 export default function Dashboard() {
-  console.log("=== DASHBOARD V2 CARGADO ===");
   const today = new Date().toISOString().split("T")[0];
   const ago30 = new Date(Date.now() - 30 * 86400000).toISOString().split("T")[0];
 
@@ -98,28 +97,23 @@ export default function Dashboard() {
 
   async function loadKpisComp(from: string, to: string) {
     const { prevFrom, prevTo } = getPrevPeriod(from, to);
-    console.log("[comp] cargando período", prevFrom, "→", prevTo);
     setLoadingComp(true);
     setKpisComp(null);
     setErrorComp("");
     try {
       const { access_token, user_id } = await getCredentials();
-      console.log("[comp] credenciales ok, user_id=", user_id, "token=", !!access_token);
       if (!access_token || !user_id) { setErrorComp("Sin credenciales"); return; }
       const key = cacheKey(user_id, prevFrom, prevTo);
       const cached = readCache(key);
-      if (cached) { console.log("[comp] desde caché"); setKpisComp(cached); return; }
-      console.log("[comp] fetch API...");
+      if (cached) { setKpisComp(cached); return; }
       const r = await fetch(
         `${RAILWAY_URL}/api/ml/kpis?user_id=${user_id}&access_token=${access_token}&date_from=${prevFrom}&date_to=${prevTo}&force=false`
       );
       const data = await r.json();
-      console.log("[comp] respuesta:", data.error ?? `ok, ${data.top_productos?.length} productos`);
       if (data.error) { setErrorComp(data.error); return; }
       writeCache(key, data);
       setKpisComp(data);
     } catch (e) {
-      console.error("[comp] error:", e);
       setErrorComp(e instanceof Error ? e.message : String(e));
     } finally {
       setLoadingComp(false);
@@ -208,7 +202,6 @@ export default function Dashboard() {
 
   useEffect(() => { loadKpis(dateFrom, dateTo); }, []);
   useEffect(() => {
-    console.log("[comp] kpis cambió, kpis=", !!kpis, "dateFrom=", dateFrom, "dateTo=", dateTo);
     if (kpis) loadKpisComp(dateFrom, dateTo);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [kpis]);
@@ -435,16 +428,16 @@ export default function Dashboard() {
             )}
 
             {showComparacion && !loadingComp && errorComp && (
-              <div style={{ color: "#cc0000", fontSize: 13, padding: "10px 0" }}>
-                Error: {errorComp}
+              <div style={{ fontSize: 12, color: "#e67e00", background: "#fffbf0", border: "1px solid #ffe5b0", borderRadius: 6, padding: "6px 12px", marginBottom: 10, display: "flex", alignItems: "center", gap: 8 }}>
+                <span>Sin datos del período anterior — mostrando solo período actual</span>
                 <button onClick={() => loadKpisComp(dateFrom, dateTo)}
-                  style={{ marginLeft: 10, fontSize: 12, color: "#3483FA", background: "none", border: "none", cursor: "pointer", textDecoration: "underline" }}>
+                  style={{ fontSize: 12, color: "#3483FA", background: "none", border: "none", cursor: "pointer", textDecoration: "underline", whiteSpace: "nowrap" }}>
                   Reintentar
                 </button>
               </div>
             )}
 
-            {showComparacion && !loadingComp && kpisComp && (
+            {showComparacion && !loadingComp && (kpisComp || errorComp) && (
               <>
                 <div style={{ position: "relative", marginBottom: 12 }}>
                   <svg style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", color: "#aaa", pointerEvents: "none" }} width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
