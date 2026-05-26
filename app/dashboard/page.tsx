@@ -428,8 +428,8 @@ export default function Dashboard() {
             )}
 
             {showComparacion && !loadingComp && errorComp && (
-              <div style={{ fontSize: 12, color: "#e67e00", background: "#fffbf0", border: "1px solid #ffe5b0", borderRadius: 6, padding: "6px 12px", marginBottom: 10, display: "flex", alignItems: "center", gap: 8 }}>
-                <span>Sin datos del período anterior — mostrando solo período actual</span>
+              <div style={{ fontSize: 12, color: "#e67e00", background: "#fffbf0", border: "1px solid #ffe5b0", borderRadius: 6, padding: "6px 12px", marginBottom: 10, display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                <span>Error período anterior: <strong>{errorComp}</strong></span>
                 <button onClick={() => loadKpisComp(dateFrom, dateTo)}
                   style={{ fontSize: 12, color: "#3483FA", background: "none", border: "none", cursor: "pointer", textDecoration: "underline", whiteSpace: "nowrap" }}>
                   Reintentar
