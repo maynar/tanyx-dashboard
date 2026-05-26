@@ -61,8 +61,10 @@ export default function Dashboard() {
   const [compSearch, setCompSearch] = useState("");
   const [showComparacion, setShowComparacion] = useState(true);
   const [priceNotes, setPriceNotes] = useState<Record<string, string>>({});
-  const [compDateFrom, setCompDateFrom] = useState(ago30);
-  const [compDateTo, setCompDateTo] = useState(today);
+  const compDefaultTo   = new Date(Date.now() - 31 * 86400000).toISOString().split("T")[0];
+  const compDefaultFrom = new Date(Date.now() - 61 * 86400000).toISOString().split("T")[0];
+  const [compDateFrom, setCompDateFrom] = useState(compDefaultFrom);
+  const [compDateTo, setCompDateTo] = useState(compDefaultTo);
 
   const CACHE_TTL_MS = 30 * 60 * 1000; // 30 minutos
 
