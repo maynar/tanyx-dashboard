@@ -196,9 +196,21 @@ export default function Dashboard() {
 
   useEffect(() => { loadKpis(dateFrom, dateTo); }, []);
   useEffect(() => {
-    if (kpis) loadKpisComp(compDateFrom, compDateTo);
+    if (kpis) {
+      console.log(`[tanyx] período principal ${dateFrom}→${dateTo}: ${kpis.total_ventas} órdenes`);
+      console.table(kpis.top_productos.map(p => ({ sku: p.sku, ventas: p.ventas_periodo, precio: p.precio })));
+      loadKpisComp(compDateFrom, compDateTo);
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [kpis]);
+
+  useEffect(() => {
+    if (kpisComp) {
+      console.log(`[tanyx] período comparación ${compDateFrom}→${compDateTo}: ${kpisComp.total_ventas} órdenes`);
+      console.table(kpisComp.top_productos.map(p => ({ sku: p.sku, ventas: p.ventas_periodo, precio: p.precio })));
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [kpisComp]);
   useEffect(() => {
     try {
       const saved = localStorage.getItem("tanyx_price_notes");
@@ -420,7 +432,7 @@ export default function Dashboard() {
               </button>
               {kpisComp && !loadingComp && (
                 <span style={{ fontSize: 12, color: "#888" }}>
-                  vs. {fmtDate(compDateFrom)} → {fmtDate(compDateTo)}
+                  · {kpisComp.total_ventas} órdenes vs {kpis?.total_ventas ?? 0} órdenes actuales
                 </span>
               )}
             </div>
