@@ -213,10 +213,12 @@ export default function Dashboard() {
   }, []);
 
   const prevPeriod = getPrevPeriod(dateFrom, dateTo);
-  const prevMap = new Map((kpisComp?.top_productos ?? []).map(p => [p.title, p]));
+  const prevMapTitle = new Map((kpisComp?.top_productos ?? []).map(p => [p.title.trim().toLowerCase(), p]));
+  const prevMapSku   = new Map((kpisComp?.top_productos ?? []).filter(p => p.sku).map(p => [p.sku!.trim().toLowerCase(), p]));
   const compRows = (kpis?.top_productos ?? [])
     .map(curr => {
-      const prev = prevMap.get(curr.title);
+      const prev = (curr.sku ? prevMapSku.get(curr.sku.trim().toLowerCase()) : undefined)
+                ?? prevMapTitle.get(curr.title.trim().toLowerCase());
       return {
         title: curr.title,
         sku: curr.sku,
