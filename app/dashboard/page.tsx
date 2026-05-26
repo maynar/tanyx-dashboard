@@ -61,6 +61,8 @@ export default function Dashboard() {
   const [compSearch, setCompSearch] = useState("");
   const [showComparacion, setShowComparacion] = useState(true);
   const [priceNotes, setPriceNotes] = useState<Record<string, string>>({});
+  const [compDateFrom, setCompDateFrom] = useState(ago30);
+  const [compDateTo, setCompDateTo] = useState(today);
 
   const CACHE_TTL_MS = 30 * 60 * 1000; // 30 minutos
 
@@ -86,28 +88,18 @@ export default function Dashboard() {
     try { localStorage.removeItem(key); } catch {}
   }
 
-  function getPrevPeriod(from: string, to: string) {
-    const d1 = new Date(from + "T12:00:00");
-    const d2 = new Date(to + "T12:00:00");
-    const days = Math.round((d2.getTime() - d1.getTime()) / 86400000) + 1;
-    const prevTo = new Date(d1.getTime() - 86400000).toISOString().split("T")[0];
-    const prevFrom = new Date(d1.getTime() - days * 86400000).toISOString().split("T")[0];
-    return { prevFrom, prevTo, days };
-  }
-
-  async function loadKpisComp(from: string, to: string) {
-    const { prevFrom, prevTo } = getPrevPeriod(from, to);
+  async function loadKpisComp(compFrom: string, compTo: string) {
     setLoadingComp(true);
     setKpisComp(null);
     setErrorComp("");
     try {
       const { access_token, user_id } = await getCredentials();
       if (!access_token || !user_id) { setErrorComp("Sin credenciales"); return; }
-      const key = cacheKey(user_id, prevFrom, prevTo);
+      const key = cacheKey(user_id, compFrom, compTo);
       const cached = readCache(key);
       if (cached) { setKpisComp(cached); return; }
       const r = await fetch(
-        `${RAILWAY_URL}/api/ml/kpis?user_id=${user_id}&access_token=${access_token}&date_from=${prevFrom}&date_to=${prevTo}&force=false`
+        `${RAILWAY_URL}/api/ml/kpis?user_id=${user_id}&access_token=${access_token}&date_from=${compFrom}&date_to=${compTo}&force=false`
       );
       const data = await r.json();
       if (data.error) { setErrorComp(data.error); return; }
@@ -202,7 +194,7 @@ export default function Dashboard() {
 
   useEffect(() => { loadKpis(dateFrom, dateTo); }, []);
   useEffect(() => {
-    if (kpis) loadKpisComp(dateFrom, dateTo);
+    if (kpis) loadKpisComp(compDateFrom, compDateTo);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [kpis]);
   useEffect(() => {
@@ -212,7 +204,6 @@ export default function Dashboard() {
     } catch {}
   }, []);
 
-  const prevPeriod = getPrevPeriod(dateFrom, dateTo);
   const prevMapSku = new Map((kpisComp?.top_productos ?? []).filter(p => p.sku).map(p => [p.sku!.trim().toLowerCase(), p]));
   const compRows = (kpis?.top_productos ?? [])
     .map(curr => {
@@ -407,17 +398,29 @@ export default function Dashboard() {
 
           {/* ===== COMPARACIÓN DE VENTAS ===== */}
           <div style={{ background: "white", border: "1px solid #eee", borderRadius: 10, padding: 16, marginBottom: 24 }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
               <div style={{ fontWeight: 600 }}>Comparación de ventas por producto</div>
               <button onClick={() => setShowComparacion(v => !v)}
                 style={{ fontSize: 12, color: "#888", background: "none", border: "none", cursor: "pointer" }}>
                 {showComparacion ? "Ocultar ▲" : "Mostrar ▼"}
               </button>
             </div>
-            <div style={{ fontSize: 12, color: "#888", marginBottom: showComparacion ? 12 : 0 }}>
-              {loadingComp
-                ? "Cargando período anterior..."
-                : `Período anterior (${prevPeriod.days} días): ${fmtDate(prevPeriod.prevFrom)} → ${fmtDate(prevPeriod.prevTo)}`}
+            <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", marginBottom: 10 }}>
+              <span style={{ fontSize: 12, color: "#888" }}>Período a comparar:</span>
+              <input type="date" value={compDateFrom} onChange={e => setCompDateFrom(e.target.value)}
+                style={{ padding: "5px 8px", border: "1px solid #ddd", borderRadius: 6, fontSize: 13 }} />
+              <span style={{ fontSize: 13, color: "#aaa" }}>→</span>
+              <input type="date" value={compDateTo} onChange={e => setCompDateTo(e.target.value)}
+                style={{ padding: "5px 8px", border: "1px solid #ddd", borderRadius: 6, fontSize: 13 }} />
+              <button onClick={() => loadKpisComp(compDateFrom, compDateTo)} disabled={loadingComp}
+                style={{ padding: "5px 16px", background: loadingComp ? "#ccc" : "#3483FA", color: "white", border: "none", borderRadius: 6, cursor: loadingComp ? "default" : "pointer", fontSize: 13 }}>
+                {loadingComp ? "Cargando..." : "Comparar"}
+              </button>
+              {kpisComp && !loadingComp && (
+                <span style={{ fontSize: 12, color: "#888" }}>
+                  vs. {fmtDate(compDateFrom)} → {fmtDate(compDateTo)}
+                </span>
+              )}
             </div>
 
             {showComparacion && loadingComp && (
@@ -430,7 +433,7 @@ export default function Dashboard() {
             {showComparacion && !loadingComp && errorComp && (
               <div style={{ fontSize: 12, color: "#e67e00", background: "#fffbf0", border: "1px solid #ffe5b0", borderRadius: 6, padding: "6px 12px", marginBottom: 10, display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
                 <span>Error período anterior: <strong>{errorComp}</strong></span>
-                <button onClick={() => loadKpisComp(dateFrom, dateTo)}
+                <button onClick={() => loadKpisComp(compDateFrom, compDateTo)}
                   style={{ fontSize: 12, color: "#3483FA", background: "none", border: "none", cursor: "pointer", textDecoration: "underline", whiteSpace: "nowrap" }}>
                   Reintentar
                 </button>
