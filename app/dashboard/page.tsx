@@ -90,7 +90,7 @@ export default function Dashboard() {
     try { localStorage.removeItem(key); } catch {}
   }
 
-  async function loadKpisComp(compFrom: string, compTo: string) {
+  async function loadKpisComp(compFrom: string, compTo: string, force = false) {
     setLoadingComp(true);
     setKpisComp(null);
     setErrorComp("");
@@ -98,10 +98,11 @@ export default function Dashboard() {
       const { access_token, user_id } = await getCredentials();
       if (!access_token || !user_id) { setErrorComp("Sin credenciales"); return; }
       const key = cacheKey(user_id, compFrom, compTo);
+      if (force) clearCache(key);
       const cached = readCache(key);
       if (cached) { setKpisComp(cached); return; }
       const r = await fetch(
-        `${RAILWAY_URL}/api/ml/kpis?user_id=${user_id}&access_token=${access_token}&date_from=${compFrom}&date_to=${compTo}&force=false`
+        `${RAILWAY_URL}/api/ml/kpis?user_id=${user_id}&access_token=${access_token}&date_from=${compFrom}&date_to=${compTo}&force=${force}`
       );
       const data = await r.json();
       if (data.error) { setErrorComp(data.error); return; }
@@ -426,7 +427,7 @@ export default function Dashboard() {
               <span style={{ fontSize: 13, color: "#aaa" }}>→</span>
               <input type="date" value={compDateTo} onChange={e => setCompDateTo(e.target.value)}
                 style={{ padding: "5px 8px", border: "1px solid #ddd", borderRadius: 6, fontSize: 13 }} />
-              <button onClick={() => loadKpisComp(compDateFrom, compDateTo)} disabled={loadingComp}
+              <button onClick={() => loadKpisComp(compDateFrom, compDateTo, true)} disabled={loadingComp}
                 style={{ padding: "5px 16px", background: loadingComp ? "#ccc" : "#3483FA", color: "white", border: "none", borderRadius: 6, cursor: loadingComp ? "default" : "pointer", fontSize: 13 }}>
                 {loadingComp ? "Cargando..." : "Comparar"}
               </button>
